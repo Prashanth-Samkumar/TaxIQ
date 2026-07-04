@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "user_id": "001",
+    "created_at": "2026-07-01T18:24:36.082181",
+    "last_updated": "2026-07-01T21:13:17.926277",
+    "financial_year": "2025-26",
+    "notes": ""
+  },
+  "profile": {
+    "name": "Prashanth",
+    "age": 20,
+    "city": "Chennai",
+    "is_metro": true,
+    "gross_salary": 1200000,
+    "basic_salary": 480000,
+    "hra_received": 240000,
+    "rent_paid_monthly": 15000,
+    "epf_contribution": 57600,
+    "ppf_contribution": 0.0,
+    "elss_investment": 0.0,
+    "life_insurance_premium": 0.0,
+    "home_loan_principal": 0.0,
+    "nsc_investment": 0.0,
+    "tuition_fees": 0.0,
+    "sukanya_samriddhi": 0.0,
+    "tax_saving_fd": 0.0,
+    "self_health_insurance": 0.0,
+    "parent_health_insurance": 0.0,
+    "are_parents_senior_citizen": false,
+    "nps_contribution": 0.0,
+    "education_loan_interest": 0.0,
+    "donations_50_percent": 10000,
+    "donations_100_percent": 0.0,
+    "savings_account_interest": 0.0,
+    "home_loan_interest": 0.0,
+    "has_home_loan": false,
+    "tds_deducted": 0.0,
+    "other_income": 0.0
+  }
+}

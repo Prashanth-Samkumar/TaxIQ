@@ -5,105 +5,11 @@ how much they have used, and how much room is left.
 
 Only relevant for OLD regime. New regime does not allow these deductions.
 
-Author: Tax Intelligence System
-Verified by: CA [Your Sister's Name]
 """
 
-from dataclasses import dataclass, field
-from typing import Optional
 
+from .schemas import UserProfile, DeductionItem, DeductionReport
 
-# ─────────────────────────────────────────────
-# DATA CLASSES
-# ─────────────────────────────────────────────
-
-@dataclass
-class UserProfile:
-    """
-    Complete profile of a salaried user.
-    This is what the Profile Agent builds and maintains.
-    All amounts in INR.
-    """
-
-    # Basic info
-    name: str
-    age: int
-    city: str                          # Metro or non-metro matters for HRA
-    is_metro: bool = False             # Mumbai, Delhi, Kolkata, Chennai = metro
-
-    # Salary details
-    gross_salary: float = 0
-    basic_salary: float = 0            # Usually 40-50% of CTC
-    hra_received: float = 0            # HRA component in salary
-    rent_paid_monthly: float = 0       # Actual rent paid per month
-
-    # 80C investments (limit: 1,50,000 total)
-    epf_contribution: float = 0        # Employee PF contribution
-    ppf_contribution: float = 0
-    elss_investment: float = 0
-    life_insurance_premium: float = 0
-    home_loan_principal: float = 0     # Principal repayment under 80C
-    nsc_investment: float = 0
-    tuition_fees: float = 0            # Children tuition fees max 2 kids
-    sukanya_samriddhi: float = 0
-    tax_saving_fd: float = 0           # 5 year tax saving FD
-
-    # 80D health insurance (limit varies)
-    self_health_insurance: float = 0   # Self + spouse + children
-    parent_health_insurance: float = 0 # Parents premium
-    are_parents_senior_citizen: bool = False  # Above 60 = senior citizen
-
-    # 80CCD1B NPS (limit: 50,000 over and above 80C)
-    nps_contribution: float = 0
-
-    # 80E education loan
-    education_loan_interest: float = 0  # No limit, entire interest deductible
-
-    # 80G donations
-    donations_50_percent: float = 0    # 50% deductible donations
-    donations_100_percent: float = 0   # 100% deductible donations
-
-    # 80TTA savings interest (limit: 10,000)
-    savings_account_interest: float = 0
-
-    # 24B home loan interest (limit: 2,00,000)
-    home_loan_interest: float = 0
-    has_home_loan: bool = False
-
-    # Other
-    tds_deducted: float = 0
-    other_income: float = 0
-
-
-@dataclass
-class DeductionItem:
-    """Represents a single deduction with its status."""
-    section: str           # e.g. "80C"
-    name: str              # e.g. "PPF Investment"
-    max_limit: float       # Maximum allowed by law
-    utilized: float        # What user has already done
-    remaining: float       # How much more they can do
-    is_eligible: bool      # Is user eligible for this deduction
-    message: str           # Human readable message for the agent
-    is_missed: bool = False  # True if user is eligible but not using it
-
-
-@dataclass
-class DeductionReport:
-    """Complete deduction report for a user profile."""
-    user_name: str
-    total_possible_deductions: float
-    total_utilized_deductions: float
-    total_remaining_deductions: float
-    potential_tax_saving: float        # Rough saving at their slab rate
-    items: list = field(default_factory=list)
-    missed_opportunities: list = field(default_factory=list)
-    alerts: list = field(default_factory=list)
-
-
-# ─────────────────────────────────────────────
-# HRA CALCULATION
-# ─────────────────────────────────────────────
 
 def calculate_hra_exemption(profile: UserProfile) -> float:
     """
@@ -163,10 +69,10 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
 
     hra_message = ""
     if hra_exemption > 0:
-        hra_message = f"HRA exemption of ₹{hra_exemption:,.0f} applicable. Submit rent receipts to employer."
+        hra_message = f"HRA exemption of Rs. {hra_exemption:,.0f} applicable. Submit rent receipts to employer."
     elif hra_missed:
         hra_message = "You pay rent but HRA is not in your salary structure. Negotiate with employer to restructure CTC."
-        missed_opportunities.append("HRA exemption — restructure salary to include HRA component")
+        missed_opportunities.append("HRA exemption - restructure salary to include HRA component")
     elif hra_not_claiming:
         hra_message = "You receive HRA but are not paying rent. No exemption applicable."
     else:
@@ -199,7 +105,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
     remaining_80c = max(0, 150000 - total_80c)
 
     if remaining_80c > 0:
-        alerts.append(f"80C: ₹{remaining_80c:,.0f} limit unused. Invest in ELSS, PPF, or top up EPF voluntarily to save more tax.")
+        alerts.append(f"80C: Rs. {remaining_80c:,.0f} limit unused. Invest in ELSS, PPF, or top up EPF voluntarily to save more tax.")
 
     items.append(DeductionItem(
         section="80C",
@@ -208,14 +114,14 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         utilized=utilized_80c,
         remaining=remaining_80c,
         is_eligible=True,
-        message=f"Used ₹{utilized_80c:,.0f} of ₹1,50,000 limit. ₹{remaining_80c:,.0f} remaining.",
+        message=f"Used Rs. {utilized_80c:,.0f} of Rs. 1,50,000 limit. Rs. {remaining_80c:,.0f} remaining.",
         is_missed=total_80c == 0
     ))
 
     # ── 4. SECTION 80D (Health Insurance) ──
-    # Self + family: max 25,000 (non-senior) 
+    # Self + family: max 25,000 (non-senior) or 50,000 (senior citizen)
     # Parents: max 25,000 (non-senior) or 50,000 (senior citizen)
-    self_80d_limit = 25000
+    self_80d_limit = 50000 if profile.age >= 60 else 25000
     parent_80d_limit = 50000 if profile.are_parents_senior_citizen else 25000
 
     utilized_80d_self = min(profile.self_health_insurance, self_80d_limit)
@@ -225,10 +131,10 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
     remaining_80d = total_80d_limit - total_utilized_80d
 
     if profile.self_health_insurance == 0:
-        missed_opportunities.append(f"80D: No self health insurance. Buy a policy to claim up to ₹25,000 deduction.")
+        missed_opportunities.append(f"80D: No self health insurance. Buy a policy to claim up to Rs. 25,000 deduction.")
 
     if profile.parent_health_insurance == 0:
-        parent_limit_str = "₹50,000" if profile.are_parents_senior_citizen else "₹25,000"
+        parent_limit_str = "Rs. 50,000" if profile.are_parents_senior_citizen else "Rs. 25,000"
         missed_opportunities.append(f"80D: No parent health insurance. Buy a policy to claim up to {parent_limit_str} deduction.")
 
     items.append(DeductionItem(
@@ -238,7 +144,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         utilized=total_utilized_80d,
         remaining=remaining_80d,
         is_eligible=True,
-        message=f"Self/family limit: ₹25,000. Parent limit: ₹{parent_80d_limit:,.0f}. Used: ₹{total_utilized_80d:,.0f}. Remaining: ₹{remaining_80d:,.0f}.",
+        message=f"Self/family limit: Rs. 25,000. Parent limit: Rs. {parent_80d_limit:,.0f}. Used: Rs. {total_utilized_80d:,.0f}. Remaining: Rs. {remaining_80d:,.0f}.",
         is_missed=total_utilized_80d == 0
     ))
 
@@ -247,7 +153,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
     remaining_nps = max(0, 50000 - profile.nps_contribution)
 
     if profile.nps_contribution == 0:
-        missed_opportunities.append("80CCD1B: No NPS investment. Invest up to ₹50,000 for additional deduction OVER AND ABOVE 80C limit.")
+        missed_opportunities.append("80CCD1B: No NPS investment. Invest up to Rs. 50,000 for additional deduction OVER AND ABOVE 80C limit.")
 
     items.append(DeductionItem(
         section="80CCD1B",
@@ -256,7 +162,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         utilized=utilized_nps,
         remaining=remaining_nps,
         is_eligible=True,
-        message=f"This is SEPARATE from 80C. Additional ₹50,000 deduction available. Used: ₹{utilized_nps:,.0f}. Remaining: ₹{remaining_nps:,.0f}.",
+        message=f"This is SEPARATE from 80C. Additional Rs. 50,000 deduction available. Used: Rs. {utilized_nps:,.0f}. Remaining: Rs. {remaining_nps:,.0f}.",
         is_missed=profile.nps_contribution == 0
     ))
 
@@ -269,7 +175,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             utilized=profile.education_loan_interest,
             remaining=0,
             is_eligible=True,
-            message=f"Full interest of ₹{profile.education_loan_interest:,.0f} deductible. No upper limit. Available for 8 years.",
+            message=f"Full interest of Rs. {profile.education_loan_interest:,.0f} deductible. No upper limit. Available for 8 years.",
             is_missed=False
         ))
 
@@ -283,7 +189,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             utilized=total_donations,
             remaining=0,
             is_eligible=True,
-            message=f"Deductible donation amount: ₹{total_donations:,.0f}. Keep receipts and 80G certificates.",
+            message=f"Deductible donation amount: Rs. {total_donations:,.0f}. Keep receipts and 80G certificates.",
             is_missed=False
         ))
 
@@ -299,7 +205,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             utilized=utilized_80ttb,
             remaining=max(0.0, 50000 - interest_income),
             is_eligible=True,
-            message=f"Senior citizen interest deduction u/s 80TTB (Savings/FD) up to ₹50,000. Utilized: ₹{utilized_80ttb:,.0f}. Remaining: ₹{max(0.0, 50000 - interest_income):,.0f}.",
+            message=f"Senior citizen interest deduction u/s 80TTB (Savings/FD) up to Rs. 50,000. Utilized: Rs. {utilized_80ttb:,.0f}. Remaining: Rs. {max(0.0, 50000 - interest_income):,.0f}.",
             is_missed=interest_income == 0
         ))
     else:
@@ -312,7 +218,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             utilized=utilized_80tta,
             remaining=max(0.0, 10000 - profile.savings_account_interest),
             is_eligible=True,
-            message=f"Savings interest up to ₹10,000 is exempt. Your interest: ₹{profile.savings_account_interest:,.0f}. Exempt: ₹{utilized_80tta:,.0f}.",
+            message=f"Savings interest up to Rs. 10,000 is exempt. Your interest: Rs. {profile.savings_account_interest:,.0f}. Exempt: Rs. {utilized_80tta:,.0f}.",
             is_missed=profile.savings_account_interest == 0
         ))
 
@@ -327,7 +233,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             utilized=utilized_24b,
             remaining=remaining_24b,
             is_eligible=True,
-            message=f"Home loan interest deduction up to ₹2,00,000. Used: ₹{utilized_24b:,.0f}.",
+            message=f"Home loan interest deduction up to Rs. 2,00,000. Used: Rs. {utilized_24b:,.0f}.",
             is_missed=False
         ))
 
@@ -362,101 +268,33 @@ def print_deduction_report(report: DeductionReport):
     print(f"  DEDUCTION REPORT FOR: {report.user_name}")
     print(f"  FY 2025-26 | Old Regime")
     print(f"{'='*55}")
-    print(f"  Total Deductions Possible  : ₹{report.total_possible_deductions:,.0f}")
-    print(f"  Total Utilized             : ₹{report.total_utilized_deductions:,.0f}")
-    print(f"  Total Remaining            : ₹{report.total_remaining_deductions:,.0f}")
-    print(f"  Potential Tax Saving Left  : ₹{report.potential_tax_saving:,.0f} (approx)")
+    print(f"  Total Deductions Possible  : Rs. {report.total_possible_deductions:,.0f}")
+    print(f"  Total Utilized             : Rs. {report.total_utilized_deductions:,.0f}")
+    print(f"  Total Remaining            : Rs. {report.total_remaining_deductions:,.0f}")
+    print(f"  Potential Tax Saving Left  : Rs. {report.potential_tax_saving:,.0f} (approx)")
 
     print(f"\n  DEDUCTION BREAKDOWN:")
     print(f"  {'-'*50}")
     for item in report.items:
-        status = "✅" if item.utilized > 0 else "❌"
-        print(f"\n  {status} {item.section} — {item.name}")
-        print(f"     Limit    : ₹{item.max_limit:,.0f}")
-        print(f"     Utilized : ₹{item.utilized:,.0f}")
+        status = "[YES]" if item.utilized > 0 else "[NO]"
+        print(f"\n  {status} {item.section} - {item.name}")
+        print(f"     Limit    : Rs. {item.max_limit:,.0f}")
+        print(f"     Utilized : Rs. {item.utilized:,.0f}")
         if item.remaining > 0:
-            print(f"     Remaining: ₹{item.remaining:,.0f} ← ACTION NEEDED")
+            print(f"     Remaining: Rs. {item.remaining:,.0f} <- ACTION NEEDED")
         print(f"     Note     : {item.message}")
 
     if report.missed_opportunities:
-        print(f"\n  🚨 MISSED OPPORTUNITIES:")
+        print(f"\n  [ALERT] MISSED OPPORTUNITIES:")
         for i, opp in enumerate(report.missed_opportunities, 1):
             print(f"     {i}. {opp}")
 
     if report.alerts:
-        print(f"\n  ⚠️  ALERTS:")
+        print(f"\n  [WARNING] ALERTS:")
         for alert in report.alerts:
-            print(f"     → {alert}")
+            print(f"     -> {alert}")
 
     print(f"\n{'='*55}\n")
 
 
-# ─────────────────────────────────────────────
-# TEST CASES
-# ─────────────────────────────────────────────
-
-if __name__ == "__main__":
-
-    print("\n📋 DEDUCTION CHECKER - FY 2025-26\n")
-
-    # ── TEST CASE 1: Rahul — missing many deductions ──
-    rahul = UserProfile(
-        name="Rahul",
-        age=26,
-        city="Chennai",
-        is_metro=True,
-        gross_salary=1200000,
-        basic_salary=480000,        # 40% of CTC
-        hra_received=240000,        # 20% of CTC
-        rent_paid_monthly=15000,
-        epf_contribution=57600,     # 12% of basic
-        ppf_contribution=50000,
-        # No health insurance
-        # No NPS
-        # No parent health insurance
-        savings_account_interest=5000,
-        tds_deducted=50000
-    )
-    rahul_report = check_deductions(rahul)
-    print_deduction_report(rahul_report)
-
-    # ── TEST CASE 2: Amit — fully optimized ──
-    amit = UserProfile(
-        name="Amit",
-        age=35,
-        city="Mumbai",
-        is_metro=True,
-        gross_salary=1800000,
-        basic_salary=720000,
-        hra_received=360000,
-        rent_paid_monthly=30000,
-        epf_contribution=86400,
-        ppf_contribution=63600,     # Tops up 80C to 1.5L
-        life_insurance_premium=0,
-        self_health_insurance=25000,
-        parent_health_insurance=50000,
-        are_parents_senior_citizen=True,
-        nps_contribution=50000,
-        home_loan_interest=200000,
-        home_loan_principal=100000,
-        has_home_loan=True,
-        savings_account_interest=8000,
-        tds_deducted=150000
-    )
-    amit_report = check_deductions(amit)
-    print_deduction_report(amit_report)
-
-    # ── TEST CASE 3: Satish — 65 years old (Senior Citizen 80TTB check) ──
-    satish = UserProfile(
-        name="Satish",
-        age=65,
-        city="Delhi",
-        is_metro=True,
-        gross_salary=600000,
-        savings_account_interest=15000,
-        other_income=45000,  # e.g., FD Interest
-        tds_deducted=0
-    )
-    satish_report = check_deductions(satish)
-    print_deduction_report(satish_report)
 

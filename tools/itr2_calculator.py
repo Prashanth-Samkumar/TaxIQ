@@ -3,85 +3,23 @@ ITR-2 Tax Calculator Tool - FY 2025-26 & FY 2026-27
 Supports: Capital Gains (STCG/LTCG), Dividend Income, Surcharge Capping (15%), 
 Section 87A Rebate limits, and Surcharge Marginal Relief.
 
-Author: Tax Intelligence System
 """
 
 import os
 import sys
-from dataclasses import dataclass
 
 # Add current directory to path to ensure robust imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from itr1_calculator import (
+from .itr1_calculator import (
     calculate_old_regime_tax,
     calculate_new_regime_tax,
     format_inr
 )
 
-
-# ─────────────────────────────────────────────
-# DATA CLASSES
-# ─────────────────────────────────────────────
-
-@dataclass
-class ITR2Input:
-    """
-    Input to the ITR-2 tax calculator.
-    All amounts in Indian Rupees (INR).
-    """
-    gross_salary: float           # Salary income before standard deduction
-    age: int = 0                  # Age of the tax filer (to check senior status)
-    hra_exemption: float = 0      # HRA exemption (old regime only)
-    deduction_80c: float = 0      # Max 1,50,000 (old regime only)
-    deduction_80d_self: float = 0 # Health insurance premium for self/family (old regime only)
-    deduction_80d_parents: float = 0 # Health insurance premium for parents (old regime only)
-    are_parents_senior_citizen: bool = False # Whether parents are senior citizens (above 60)
-    deduction_80ccd1b: float = 0  # NPS extra contribution max 50,000 (old regime only)
-    deduction_80e: float = 0      # Education loan interest (old regime only)
-    deduction_80g: float = 0      # Donations (old regime only)
-    deduction_80tta: float = 0    # Savings interest (non-seniors: max 10,000 u/s 80TTA)
-    deduction_80ttb: float = 0    # Savings/FD interest (seniors: max 50,000 u/s 80TTB)
-    deduction_24b: float = 0      # Home loan interest max 2,00,000 (old regime only)
-    other_income: float = 0       # FD interest, other slab-rate sources
-    dividend_income: float = 0    # Dividend income (slab rate, surcharge capped at 15%)
-    
-    # Capital Gains
-    cg_stcg_equity: float = 0     # STCG u/s 111A (taxed at 20%, surcharge capped at 15%)
-    cg_ltcg_equity: float = 0     # LTCG u/s 112A (taxed at 12.5% on gains > 1.25L, surcharge capped at 15%)
-    cg_ltcg_other: float = 0      # LTCG u/s 112 (taxed at 12.5% flat e.g., gold/property, surcharge capped at 15%)
-    cg_stcg_other: float = 0      # STCG other (added to slab income)
-    
-    tds_deducted: float = 0       # TDS already deducted
+from .schemas import ITR2Input, ITR2Result
 
 
-@dataclass
-class ITR2Result:
-    """
-    Output from the ITR-2 tax calculator.
-    """
-    regime: str
-    gross_total_income: float
-    total_deductions: float
-    taxable_normal_income: float
-    tax_on_normal: float
-    tax_on_dividend: float
-    tax_on_stcg_equity: float
-    tax_on_ltcg_equity: float
-    tax_on_ltcg_other: float
-    rebate_87a: float
-    surcharge: float
-    surcharge_relief: float
-    cess: float
-    total_tax_liability: float
-    tds_deducted: float
-    tax_payable_or_refund: float
-    effective_tax_rate: float
-
-
-# ─────────────────────────────────────────────
-# HELPER FUNCTIONS
-# ─────────────────────────────────────────────
 
 def get_surcharge_rates(income: float, regime: str) -> tuple[float, float]:
     """
@@ -109,7 +47,8 @@ def compute_base_tax_and_surcharge(
     cg_ltcg_other: float,
     dividends: float,
     regime: str,
-    override_surcharge_income: float = None
+    override_surcharge_income: float = None,
+    age: int = 0
 ) -> tuple[float, float, float, float, float, float, float, float]:
     """
     Compute base taxes, 87A rebate, normal surcharge, and surcharge marginal relief.
@@ -119,7 +58,7 @@ def compute_base_tax_and_surcharge(
     # 1. Base normal & dividend tax (slab rate)
     slab_taxable = normal_taxable + dividends
     if regime == "old":
-        base_slab_tax, _ = calculate_old_regime_tax(slab_taxable)
+        base_slab_tax, _ = calculate_old_regime_tax(slab_taxable, age)
     else:
         base_slab_tax, _ = calculate_new_regime_tax(slab_taxable)
 
@@ -197,12 +136,13 @@ def compute_base_tax_and_surcharge(
                 cg_ltcg_other * factor,
                 dividends * factor,
                 regime,
-                override_surcharge_income=active_threshold
+                override_surcharge_income=active_threshold,
+                age=age
             )
             # Recompute base taxes at threshold for calculation
             th_slab_taxable = (normal_taxable + dividends) * factor
             if regime == "old":
-                th_base_slab_tax, _ = calculate_old_regime_tax(th_slab_taxable)
+                th_base_slab_tax, _ = calculate_old_regime_tax(th_slab_taxable, age)
             else:
                 th_base_slab_tax, _ = calculate_new_regime_tax(th_slab_taxable)
 
@@ -241,9 +181,7 @@ def compute_base_tax_and_surcharge(
     return tax_normal, tax_dividend, tax_stcg_eq, tax_ltcg_eq, tax_ltcg_other, rebate_87a, surcharge_total, surcharge_relief
 
 
-# ─────────────────────────────────────────────
-# MAIN CALCULATION FUNCTION
-# ─────────────────────────────────────────────
+
 
 def calculate_itr2_tax(inputs: ITR2Input, regime: str = "both") -> dict:
     """
@@ -319,7 +257,8 @@ def calculate_itr2_tax(inputs: ITR2Input, regime: str = "both") -> dict:
             cg_ltcg_eq=inputs.cg_ltcg_equity,
             cg_ltcg_other=inputs.cg_ltcg_other,
             dividends=inputs.dividend_income,
-            regime=r
+            regime=r,
+            age=inputs.age
         )
 
         # Total tax after rebate (before surcharge and cess)
@@ -356,9 +295,9 @@ def calculate_itr2_tax(inputs: ITR2Input, regime: str = "both") -> dict:
     return results
 
 
-# ─────────────────────────────────────────────
-# PRETTY PRINT HELPER
-# ─────────────────────────────────────────────
+
+
+# Test
 
 def print_itr2_result(result: ITR2Result):
     """Print readable ITR-2 results."""
@@ -390,87 +329,4 @@ def print_itr2_result(result: ITR2Result):
     print(f"{'='*60}")
 
 
-# ─────────────────────────────────────────────
-# TEST CASES
-# ─────────────────────────────────────────────
 
-if __name__ == "__main__":
-    print("\n📊 ITR-2 TAX CALCULATOR TEST SUITE")
-    print("Please verify all outputs with a CA\n")
-
-    # ── TEST CASE 1: Capital Gains and Section 87A Rebate exclusion check ──
-    # Salary ₹8L, STCG Equity ₹1L. Total Income ₹9L.
-    # Standard deduction ₹75,000. Taxable Normal Income ₹7.25L.
-    # Slab tax under New Regime: 5% of 3.25L = 16,250.
-    # STCG Equity tax: 20% of 1L = 20,000.
-    # Total income is 9L (<= 12L limit for 87A).
-    # Normal tax (16,250) is fully rebated. STCG tax (20,000) CANNOT be rebated.
-    # Cess = 20,000 * 0.04 = 800. Total tax = 20,800.
-    print("TEST CASE 1: Karan — Salary 8L, STCG Equity 1L (Rebate 87A exclusion check)")
-    karan = ITR2Input(
-        gross_salary=800000,
-        age=30,
-        cg_stcg_equity=100000
-    )
-    karan_res = calculate_itr2_tax(karan, regime="new")
-    for r in karan_res.values():
-        print_itr2_result(r)
-        assert r.rebate_87a == 16250.0, f"Expected 87A rebate of 16,250, got {r.rebate_87a}"
-        assert r.total_tax_liability == 20800.0, f"Expected total tax of 20,800, got {r.total_tax_liability}"
-
-    # ── TEST CASE 2: High income earner with capped surcharge rates ──
-    # Normal income ₹2.5 Cr, CG (111A/112/112A) ₹60 Lakhs. Total Income ₹3.1 Cr.
-    # Surcharge on Normal Tax is 25%.
-    # Surcharge on Special Rate CG Tax is capped at 15%.
-    print("TEST CASE 2: High Income — Salary 2.5 Cr, STCG Equity 60 Lakhs (Surcharge capping check)")
-    high_inc = ITR2Input(
-        gross_salary=25000000,
-        age=45,
-        cg_stcg_equity=6000000
-    )
-    high_inc_res = calculate_itr2_tax(high_inc, regime="both")
-    for r in high_inc_res.values():
-        print_itr2_result(r)
-        
-        # Verify New Regime Surcharge logic:
-        # gross_salary = 2.5Cr. Standard deduction = 75k. Taxable Normal = 24,925,000.
-        # Slabs tax:
-        # 4-8L (20k), 8-12L (40k), 12-16L (60k), 16-20L (80k), 20-24L (1L), Above 24L (30% of 22,525,000 = 6,757,500).
-        # Total normal tax = 7,057,500.
-        # STCG Equity tax = 6,000,000 * 20% = 1,200,000.
-        # Total income is 3.1Cr, which is in (2Cr, 5Cr] bracket (25% normal surcharge rate).
-        # Surcharge on normal: 7,057,500 * 25% = 1,764,375.
-        # Surcharge on STCG Equity (capped at 15%): 1,200,000 * 15% = 180,000.
-        # Total surcharge = 1,764,375 + 180,000 = 1,944,375.
-        # Cess = (total tax (8,257,500) + surcharge (1,944,375)) * 4% = 408,075.
-        # Total tax liability = 8,257,500 + 1,944,375 + 408,075 = 10,609,950.
-        if r.regime == "New Regime":
-            assert r.surcharge == 1944375.0, f"Expected surcharge of 1,944,375, got {r.surcharge}"
-            assert r.total_tax_liability == 10609950.0, f"Expected total tax liability of 10,609,950, got {r.total_tax_liability}"
-
-    # ── TEST CASE 3: Surcharge Marginal Relief at 50 Lakhs limit ──
-    # Taxable Normal Income ₹50,50,000 (Salary 51.25L - standard deduction 75K).
-    # Total Income ₹50.5 Lakhs net taxable (crossing 50L threshold).
-    # Verifies that total tax + surcharge does not exceed tax at 50L + excess income of 50K.
-    print("TEST CASE 3: Amit — Salary 51.25L, no investments (Surcharge marginal relief at 50L)")
-    amit = ITR2Input(
-        gross_salary=5125000,
-        age=35
-    )
-    amit_res = calculate_itr2_tax(amit, regime="new")
-    for r in amit_res.values():
-        print_itr2_result(r)
-        # Taxable normal = 5,050,000. Slabs tax = 1,095,000.
-        # Surcharge (normal 10%) = 109,500. Total tax + surcharge = 1,204,500.
-        # Tax at threshold 50L: taxable = 5,000,000. Slabs tax = 1,080,000. Surcharge = 0.
-        # Excess income = 5,050,000 - 5,000,000 = 50,000.
-        # Max allowed = 1,080,000 + 50,000 = 1,130,000.
-        # Actual (1,204,500) > Max (1,130,000), so relief applies.
-        # Relief = 1,204,500 - 1,130,000 = 74,500.
-        # Surcharge final = 109,500 - 74,500 = 35,000.
-        # Cess = (1,095,000 + 35,000) * 0.04 = 45,200.
-        # Total tax liability = 1,095,000 + 35,000 + 45,200 = 1,175,200.
-        assert r.surcharge == 35000.0, f"Expected surcharge of 35,000, got {r.surcharge}"
-        assert r.total_tax_liability == 1175200.0, f"Expected total tax liability of 1,175,200, got {r.total_tax_liability}"
-
-    print("\n🎉 ALL ITR-2 TESTS COMPLETED AND VERIFIED CORRECTLY!")

@@ -3,3 +3,5 @@ langchain-openai
 langgraph
 pydantic
 langchain-groq
+langchain-google-genai
+langchain-ollama
