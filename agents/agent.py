@@ -19,6 +19,7 @@ from tools.profile_store import (
     list_profiles,
     get_profile_summary,
 )
+from rag.rag_pipeline import query_index
 from tools.deduction_checker import check_deductions, calculate_hra_exemption
 from tools.itr1_calculator import calculate_tax
 
@@ -140,6 +141,15 @@ def calculate_tax_tool(*, runtime: ToolRuntime[UserContext]) -> str:
     serialized_results = {regime: asdict(res) for regime, res in results.items()}
     return json.dumps(serialized_results, default=str)
 
+@tool
+def rag_query_tool(query:str, runtime: ToolRuntime[UserContext]) -> str:
+    """
+    Query the RAG index for relevant information.
+    Returns the retrieved chunks as a JSON string.
+    """
+    results = query_index("chroma_db", "tax_iq_collection", query, k=3)
+    return json.dumps(results, default=str)
+
 # Load prompt from the external file
 prompt_path = os.path.join(os.path.dirname(__file__), "..", "prompts", "tax_agent_system_prompt.txt")
 with open(prompt_path, "r", encoding="utf-8") as f:
@@ -158,6 +168,7 @@ tools = [
     get_profile_summary_tool,
     check_deductions_tool,
     calculate_tax_tool,
+    rag_query_tool
 ]
 
 agent = create_agent(
