@@ -1,0 +1,102 @@
+[
+  {
+    "category": "core_sections",
+    "query": "What is the scope of total income of a resident taxpayer under the Income-tax Act, 2025?",
+    "expected_chunk_ids": ["sec_005"]
+  },
+  {
+    "category": "core_sections",
+    "query": "What are the rules and definitions regarding the tax year and its duration?",
+    "expected_chunk_ids": ["sec_003"]
+  },
+  {
+    "category": "core_sections",
+    "query": "Under what conditions can a taxpayer claim a deduction for bad debts and provisions for bad and doubtful debts?",
+    "expected_chunk_ids": ["sec_031"]
+  },
+  {
+    "category": "core_sections",
+    "query": "What standard deduction is applicable to salaried employees in computing income under the head Salaries?",
+    "expected_chunk_ids": ["sec_019"]
+  },
+  {
+    "category": "core_sections",
+    "query": "How is the annual value of property determined for computing income from house property?",
+    "expected_chunk_ids": ["sec_021"]
+  },
+  {
+    "category": "core_sections",
+    "query": "Under what conditions is an expenditure on scientific research allowed as a deduction?",
+    "expected_chunk_ids": ["sec_045"]
+  },
+  {
+    "category": "amendments",
+    "query": "How was the definition of co-operative society amended by the Finance Act, 2026?",
+    "expected_chunk_ids": ["sec_002"]
+  },
+  {
+    "category": "amendments",
+    "query": "What changes were made by the Finance Act 2026 regarding dividend distribution and stock buybacks?",
+    "expected_chunk_ids": ["sec_002"]
+  },
+  {
+    "category": "amendments",
+    "query": "Are contributions by an employer to a recognised provident fund or approved superannuation fund deductible under the amended provisions?",
+    "expected_chunk_ids": ["sec_029"]
+  },
+  {
+    "category": "amendments",
+    "query": "How does the Finance Act 2026 define group entities, parent entities, and principal entities for dividend distribution?",
+    "expected_chunk_ids": ["sec_002"]
+  },
+  {
+    "category": "amendments",
+    "query": "Under the Finance Act 2026, is a transaction involving the transfer of capital assets between two group companies regarded as a transfer for capital gains?",
+    "expected_chunk_ids": ["sec_070"]
+  },
+  {
+    "category": "amendments",
+    "query": "How is the cost of acquisition determined when a company purchases its own shares or specified securities under capital gains?",
+    "expected_chunk_ids": ["sec_069"]
+  },
+  {
+    "category": "tables",
+    "query": "How is the cost of acquisition determined for a capital asset specified in Sl. No. 1 of the modes of acquisition table?",
+    "expected_chunk_ids": ["sec_073"]
+  },
+  {
+    "category": "tables",
+    "query": "What are the specified circumstances and rules for determination of actual cost of an asset under the actual cost table?",
+    "expected_chunk_ids": ["sec_039"]
+  },
+  {
+    "category": "tables",
+    "query": "Who is considered a specified person in the table for expenses or payments not deductible?",
+    "expected_chunk_ids": ["sec_036"]
+  },
+  {
+    "category": "tables",
+    "query": "What is the maximum amount of deduction allowed for a public sector bank under the provision for bad and doubtful debts table?",
+    "expected_chunk_ids": ["sec_031"]
+  },
+  {
+    "category": "schedules",
+    "query": "What are the conditions for certain activities of an eligible investment fund not to constitute a business connection in India?",
+    "expected_chunk_ids": ["sched_I_1"]
+  },
+  {
+    "category": "schedules",
+    "query": "What incomes are not to be included in total income under Schedule II of the Act?",
+    "expected_chunk_ids": ["sched_II"]
+  },
+  {
+    "category": "schedules",
+    "query": "Which eligible nonresidents, foreign companies, and other such persons have their incomes excluded from total income under Schedule IV?",
+    "expected_chunk_ids": ["sched_IV"]
+  },
+  {
+    "category": "schedules",
+    "query": "What are the rules and deductions for tea development account, coffee development account, and rubber development account?",
+    "expected_chunk_ids": ["sched_IX_1"]
+  }
+]

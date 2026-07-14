@@ -4,6 +4,8 @@ load_dotenv(override=True)
 
 from agents.agent import agent
 from tools.schemas import UserContext
+from rag import RagPipeline
+
 
 def main():
     print("==================================================")
@@ -60,4 +62,5 @@ def main():
             print(f"\nError: {e}\n")
 
 if __name__ == "__main__":
-    main()
+    rag = RagPipeline()
+    print(rag.retrieve("What is the income tax rate for FY 2025-26?")) 
