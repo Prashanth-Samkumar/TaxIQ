@@ -8,7 +8,6 @@ load_dotenv(override=True)
 from langchain.agents import create_agent
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
-#from langchain_google_genai import ChatGoogleGenAI
 from langchain.tools import tool, ToolRuntime
 from tools.schemas import UserContext, UserProfile, TaxInput
 from tools.profile_store import (
@@ -137,7 +136,6 @@ def calculate_tax_tool(*, runtime: ToolRuntime[UserContext]) -> str:
     )
     
     results = calculate_tax(tax_input, regime="both")
-    # Serialize the dict of TaxResult objects to JSON
     serialized_results = {regime: asdict(res) for regime, res in results.items()}
     return json.dumps(serialized_results, default=str)
 
@@ -150,14 +148,11 @@ def rag_query_tool(query:str, runtime: ToolRuntime[UserContext]) -> str:
     results = query_index("chroma_db", "tax_iq_collection", query, k=3)
     return json.dumps(results, default=str)
 
-# Load prompt from the external file
 prompt_path = os.path.join(os.path.dirname(__file__), "..", "prompts", "tax_agent_system_prompt.txt")
 with open(prompt_path, "r", encoding="utf-8") as f:
     prompt = f.read()
 
-# model = ChatOllama(model="llama3.1:8b", temperature=0)
 model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
-# model = ChatGoogleGenAI(model="gemini-1.5-flash", temperature=0)
 
 tools = [
     create_profile_tool,

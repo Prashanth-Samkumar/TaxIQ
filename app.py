@@ -31,16 +31,12 @@ def main():
                 print("Goodbye!")
                 break
                 
-            # Append user message
             thread_state["messages"].append({"role": "user", "content": user_input})
             
-            # Invoke the agent
             res = agent.invoke(thread_state, context=context)
             
-            # Update local thread state messages
             thread_state["messages"] = res["messages"]
             
-            # Print last AI message
             ai_msg = res["messages"][-1]
             content = ai_msg.content
             if isinstance(content, list):

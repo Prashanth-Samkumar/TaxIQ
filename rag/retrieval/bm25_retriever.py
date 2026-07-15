@@ -23,14 +23,12 @@ class BM25Retriever(BaseRetriever):
         self.documents: List[str] = []
         self.metadatas: List[Optional[Dict[str, Any]]] = []
         
-        # Corpora statistics
         self.doc_lens: List[int] = []
         self.avg_doc_len: float = 0.0
-        self.doc_term_freqs: List[Counter] = []  # term counts for each document
-        self.idf: Dict[str, float] = {}  # term to IDF scores
+        self.doc_term_freqs: List[Counter] = []
+        self.idf: Dict[str, float] = {}
         self.corpus_size: int = 0
 
-        # Query all documents from the vector store and fit the index on startup
         all_data = vector_store.get()
         self.fit(
             ids=all_data.get("ids", []),
@@ -90,10 +88,8 @@ class BM25Retriever(BaseRetriever):
                 
         self.avg_doc_len = total_len / self.corpus_size
 
-        # Compute IDF for all unique terms
         self.idf = {}
         for term, df in doc_freqs.items():
-            # Using +1.0 inside log to ensure IDF is always positive
             self.idf[term] = math.log((self.corpus_size - df + 0.5) / (df + 0.5) + 1.0)
 
     def retrieve(
@@ -116,7 +112,6 @@ class BM25Retriever(BaseRetriever):
 
         query_tokens = self._tokenize(query)
         if not query_tokens:
-            # Fallback if query has no tokens: return top k documents with score 0.0
             return [
                 {
                     "id": self.ids[i],
@@ -138,7 +133,6 @@ class BM25Retriever(BaseRetriever):
                     continue
                 tf = term_freqs.get(token, 0)
                 
-                # Okapi BM25 scoring formula
                 idf = self.idf[token]
                 numerator = tf * (self.k1 + 1.0)
                 denominator = tf + self.k1 * (1.0 - self.b + self.b * (doc_len / self.avg_doc_len))
@@ -146,7 +140,6 @@ class BM25Retriever(BaseRetriever):
                 
             scores.append(score)
 
-        # Rank indices by score descending
         ranked_indices = sorted(range(len(scores)), key=lambda idx: scores[idx], reverse=True)
 
         results = []

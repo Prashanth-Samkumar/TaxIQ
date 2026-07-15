@@ -38,23 +38,19 @@ class TransformerReranker(BaseReranker):
         if not documents:
             return []
 
-        # Prepare pairs: (query, document_text)
         pairs = []
         for doc in documents:
             text = doc.get("document", doc.get("text", ""))
             pairs.append([query, text])
 
-        # Predict scores using CrossEncoder
         scores = self.model.predict(pairs)
 
-        # Attach scores and return copies
         reranked = []
         for doc, score in zip(documents, scores):
             new_doc = doc.copy()
             new_doc["rerank_score"] = float(score)
             reranked.append(new_doc)
 
-        # Sort descending by rerank_score
         reranked.sort(key=lambda x: x["rerank_score"], reverse=True)
 
         return reranked[:k]

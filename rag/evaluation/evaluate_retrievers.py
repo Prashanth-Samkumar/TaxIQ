@@ -3,7 +3,6 @@ import sys
 import os
 from typing import List, Dict, Any
 
-# Ensure workspace root is in python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from rag.vector_store.chroma import ChromaVectorStore
@@ -17,7 +16,6 @@ def load_evaluation_data() -> List[Dict[str, Any]]:
 def run_evaluation():
     print("=== Loading Retrievers and Golden Evaluation Data ===")
     
-    # Using real SentenceTransformerEmbedding
     from rag.embeddings.sentence_transformer import SentenceTransformerEmbedding
     embedding_model = SentenceTransformerEmbedding(model_name="all-MiniLM-L6-v2")
     vector_store = ChromaVectorStore(
@@ -29,7 +27,6 @@ def run_evaluation():
     bm25 = BM25Retriever(vector_store=vector_store)
     hybrid = HybridRetriever(vector_store=vector_store, bm25=bm25, rrf_constant=60)
     
-    # Reranker integration
     from rag.rag_pipeline import RagPipeline
     reranked_retriever = RagPipeline(rerank_k=15)
     
@@ -37,7 +34,6 @@ def run_evaluation():
     num_queries = len(evaluation_data)
     print(f"Loaded {num_queries} queries across 4 categories.")
 
-    # Tracking hits and MRR
     metrics = {
         "bm25": {"hits": 0, "mrr": 0.0},
         "vector": {"hits": 0, "mrr": 0.0},
@@ -53,7 +49,6 @@ def run_evaluation():
         query = item["query"]
         expected = item["expected_chunk_ids"]
         
-        # Execute searches
         bm25_res = bm25.retrieve(query, k=k)
         vector_res = vector_store.similarity_search(query, k=k)
         hybrid_res = hybrid.retrieve(query, k=k)
@@ -76,12 +71,10 @@ def run_evaluation():
                 metrics[key]["hits"] += 1
                 metrics[key]["mrr"] += mrr_val
 
-    # Print results
     print("\n" + "="*45)
     print("      RETRIEVAL ENGINE PERFORMANCE SUMMARY      ")
     print("="*45)
     
-    # Calculate statistics by category
     print(f"{'Engine':<10} | {'Hit Rate (k=5)':<15} | {'Mean Reciprocal Rank (MRR)':<25}")
     print("-"*60)
     for engine, data in metrics.items():
