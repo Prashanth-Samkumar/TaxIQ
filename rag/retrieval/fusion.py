@@ -33,6 +33,5 @@ def reciprocal_rank_fusion(
             else:
                 fused_docs[doc_id]["score"] += score_contrib
 
-    # Sort documents by final RRF score descending
     sorted_results = sorted(fused_docs.values(), key=lambda x: x["score"], reverse=True)
     return sorted_results

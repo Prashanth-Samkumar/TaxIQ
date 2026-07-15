@@ -31,12 +31,9 @@ def calculate_hra_exemption(profile: UserProfile) -> float:
     condition_3 = 0.50 * basic if profile.is_metro else 0.40 * basic
 
     exemption = min(condition_1, condition_2, condition_3)
-    return max(0, exemption)  # Cannot be negative
+    return max(0, exemption)
 
 
-# ─────────────────────────────────────────────
-# MAIN TOOL FUNCTION
-# ─────────────────────────────────────────────
 
 def check_deductions(profile: UserProfile) -> DeductionReport:
     """
@@ -49,7 +46,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
     missed_opportunities = []
     alerts = []
 
-    # ── 1. STANDARD DEDUCTION ──
     std_deduction = min(profile.gross_salary, 50000)
     items.append(DeductionItem(
         section="Standard Deduction",
@@ -62,7 +58,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         is_missed=False
     ))
 
-    # ── 2. HRA EXEMPTION ──
     hra_exemption = calculate_hra_exemption(profile)
     hra_missed = profile.rent_paid_monthly > 0 and profile.hra_received == 0
     hra_not_claiming = profile.hra_received > 0 and profile.rent_paid_monthly == 0
@@ -89,7 +84,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         is_missed=hra_missed
     ))
 
-    # ── 3. SECTION 80C (Limit: 1,50,000) ──
     total_80c = (
         profile.epf_contribution +
         profile.ppf_contribution +
@@ -118,9 +112,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         is_missed=total_80c == 0
     ))
 
-    # ── 4. SECTION 80D (Health Insurance) ──
-    # Self + family: max 25,000 (non-senior) or 50,000 (senior citizen)
-    # Parents: max 25,000 (non-senior) or 50,000 (senior citizen)
     self_80d_limit = 50000 if profile.age >= 60 else 25000
     parent_80d_limit = 50000 if profile.are_parents_senior_citizen else 25000
 
@@ -148,7 +139,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         is_missed=total_utilized_80d == 0
     ))
 
-    # ── 5. SECTION 80CCD1B (NPS extra deduction: limit 50,000) ──
     utilized_nps = min(profile.nps_contribution, 50000)
     remaining_nps = max(0, 50000 - profile.nps_contribution)
 
@@ -166,12 +156,11 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         is_missed=profile.nps_contribution == 0
     ))
 
-    # ── 6. SECTION 80E (Education Loan Interest) ──
     if profile.education_loan_interest > 0:
         items.append(DeductionItem(
             section="80E",
             name="Education Loan Interest",
-            max_limit=profile.education_loan_interest,  # No upper limit
+            max_limit=profile.education_loan_interest,
             utilized=profile.education_loan_interest,
             remaining=0,
             is_eligible=True,
@@ -179,7 +168,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             is_missed=False
         ))
 
-    # ── 7. SECTION 80G (Donations) ──
     total_donations = profile.donations_100_percent + (profile.donations_50_percent * 0.5)
     if total_donations > 0:
         items.append(DeductionItem(
@@ -193,9 +181,7 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             is_missed=False
         ))
 
-    # ── 8. SECTION 80TTA / 80TTB (Interest on Deposits) ──
     if profile.age >= 60:
-        # Senior Citizen Section 80TTB limit: 50,000 (applies to savings and FD/other deposit interest)
         interest_income = profile.savings_account_interest + profile.other_income
         utilized_80ttb = min(interest_income, 50000)
         items.append(DeductionItem(
@@ -209,7 +195,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             is_missed=interest_income == 0
         ))
     else:
-        # Non-Senior Section 80TTA limit: 10,000 (applies to savings account interest only)
         utilized_80tta = min(profile.savings_account_interest, 10000)
         items.append(DeductionItem(
             section="80TTA",
@@ -222,7 +207,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             is_missed=profile.savings_account_interest == 0
         ))
 
-    # ── 9. SECTION 24B (Home Loan Interest: limit 2,00,000) ──
     if profile.has_home_loan:
         utilized_24b = min(profile.home_loan_interest, 200000)
         remaining_24b = max(0, 200000 - profile.home_loan_interest)
@@ -237,13 +221,10 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
             is_missed=False
         ))
 
-    # ── CALCULATE TOTALS ──
     total_possible = sum(item.max_limit for item in items)
     total_utilized = sum(item.utilized for item in items)
     total_remaining = sum(item.remaining for item in items if item.remaining > 0)
 
-    # Rough tax saving estimate at 30% slab (conservative upper estimate)
-    # In reality depends on their actual slab
     potential_saving = total_remaining * 0.30
 
     return DeductionReport(
@@ -258,9 +239,6 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
     )
 
 
-# ─────────────────────────────────────────────
-# PRETTY PRINT HELPER
-# ─────────────────────────────────────────────
 
 def print_deduction_report(report: DeductionReport):
     """Print a clean readable deduction report."""

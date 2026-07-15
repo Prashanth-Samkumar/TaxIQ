@@ -33,16 +33,13 @@ class HybridRetriever(BaseRetriever):
         Returns:
             List of combined retrieved document dicts sorted by RRF score descending.
         """
-        # Fetch candidate pools from both retrievers
-        candidate_count = max(2 * k, 10)  # query enough candidates to ensure quality fusion
+        candidate_count = max(2 * k, 10)
         dense_results = self.vector_store.similarity_search(query, k=candidate_count)
         lexical_results = self.bm25.retrieve(query, k=candidate_count)
 
-        # Delegate fusion logic to reciprocal_rank_fusion
         fused_results = reciprocal_rank_fusion(
             results_lists=[dense_results, lexical_results],
             rrf_constant=self.rrf_constant
         )
 
-        # Return the top-k matched documents
         return fused_results[:k]

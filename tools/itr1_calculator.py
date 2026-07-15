@@ -21,14 +21,12 @@ def calculate_old_regime_tax(taxable_income: float, age: int = 0) -> tuple[float
     breakdown = []
 
     if age >= 80:
-        # Super Senior Citizen (80+ years)
         slabs = [
             (500000, 0.00, "Up to Rs. 5,00,000"),
             (500000, 0.20, "Rs. 5,00,001 to Rs. 10,00,000 @ 20%"),
             (float('inf'), 0.30, "Above Rs. 10,00,000 @ 30%"),
         ]
     elif age >= 60:
-        # Senior Citizen (60-79 years)
         slabs = [
             (300000, 0.00, "Up to Rs. 3,00,000"),
             (200000, 0.05, "Rs. 3,00,001 to Rs. 5,00,000 @ 5%"),
@@ -36,7 +34,6 @@ def calculate_old_regime_tax(taxable_income: float, age: int = 0) -> tuple[float
             (float('inf'), 0.30, "Above Rs. 10,00,000 @ 30%"),
         ]
     else:
-        # Under 60 years
         slabs = [
             (250000, 0.00, "Up to Rs. 2,50,000"),
             (250000, 0.05, "Rs. 2,50,001 to Rs. 5,00,000 @ 5%"),
@@ -127,7 +124,6 @@ def calculate_rebate_87a(tax: float, taxable_income: float, regime: str) -> floa
         if taxable_income <= 1200000:
             return tax
         else:
-            # Marginal relief under Section 87A
             excess_income = taxable_income - 1200000
             if tax > excess_income:
                 return tax - excess_income
@@ -148,22 +144,16 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
 
     results = {}
 
-    # ── GROSS TOTAL INCOME (same for both regimes) ──
     gross_total_income = inputs.gross_salary + inputs.other_income
 
-    # ── OLD REGIME CALCULATION ──
     if regime in ["old", "both"]:
 
-        # Deductions allowed only in old regime
-        # Standard deduction for old regime is capped at 50,000 (and limited by gross salary)
         std_deduction_old = min(inputs.gross_salary, 50000)
 
-        # Section 80D Health Insurance Capping
         self_80d_limit = 50000 if inputs.age >= 60 else 25000
         parent_80d_limit = 50000 if inputs.are_parents_senior_citizen else 25000
         utilized_80d = min(inputs.deduction_80d_self, self_80d_limit) + min(inputs.deduction_80d_parents, parent_80d_limit)
 
-        # Section 80TTA vs 80TTB Interest Exemption
         if inputs.age >= 60:
             interest_deduction = min(inputs.deduction_80ttb, 50000)
         else:
@@ -172,13 +162,13 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
         total_deductions = (
             std_deduction_old +
             inputs.hra_exemption +
-            min(inputs.deduction_80c, 150000) +       # Capped at 1.5L
+            min(inputs.deduction_80c, 150000) +
             utilized_80d +
-            min(inputs.deduction_80ccd1b, 50000) +    # Capped at 50K
+            min(inputs.deduction_80ccd1b, 50000) +
             inputs.deduction_80e +
             inputs.deduction_80g +
             interest_deduction +
-            min(inputs.deduction_24b, 200000)          # Capped at 2L
+            min(inputs.deduction_24b, 200000)
         )
 
         taxable_income_old = max(0, gross_total_income - total_deductions)
@@ -186,7 +176,7 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
         tax_after_surcharge_old = tax_old
         rebate_old = calculate_rebate_87a(tax_after_surcharge_old, taxable_income_old, "old")
         tax_after_rebate_old = max(0, tax_after_surcharge_old - rebate_old)
-        cess_old = tax_after_rebate_old * 0.04         # 4% Health & Education Cess
+        cess_old = tax_after_rebate_old * 0.04
         total_tax_old = tax_after_rebate_old + cess_old
         tax_payable_old = total_tax_old - inputs.tds_deducted
         effective_rate_old = (total_tax_old / gross_total_income * 100) if gross_total_income > 0 else 0
@@ -208,13 +198,8 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
             slab_breakdown=breakdown_old
         )
 
-    # ── NEW REGIME CALCULATION ──
     if regime in ["new", "both"]:
 
-        # New regime: only standard deduction allowed (capped at 75,000 and limited by gross salary)
-        # No HRA, no 80C, no 80D, no other deductions
-        # Exception: 80CCD(2) employer NPS contribution is allowed but
-        # that comes via employer so reflected in salary itself
         std_deduction_new = min(inputs.gross_salary, 75000)
         total_deductions_new = std_deduction_new
 
@@ -251,7 +236,6 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
 
 
 
-# test
 
 def format_inr(amount: float) -> str:
     """Format number as Indian Rupees with commas."""

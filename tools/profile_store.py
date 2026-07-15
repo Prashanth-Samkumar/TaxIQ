@@ -62,7 +62,6 @@ def update_profile(user_id: str, updates: dict) -> bool:
         print(f"  [ERROR] Profile not found: {user_id}")
         return False
 
-    # Apply updates to profile fields
     for field, value in updates.items():
         if field in stored_data["profile"]:
             old_value = stored_data["profile"][field]
@@ -71,10 +70,8 @@ def update_profile(user_id: str, updates: dict) -> bool:
         else:
             print(f"  [WARNING] Unknown field ignored: {field}")
 
-    # Update timestamp
     stored_data["metadata"]["last_updated"] = datetime.now().isoformat()
 
-    # Save back
     file_path = _get_profile_path(user_id)
     with open(file_path, "w") as f:
         json.dump(stored_data, f, indent=2)
@@ -93,9 +90,6 @@ def delete_profile(user_id: str) -> bool:
     return False
 
 
-# ─────────────────────────────────────────────
-# READ OPERATIONS
-# ─────────────────────────────────────────────
 
 def read_profile(user_id: str) -> Optional[StoredProfile]:
     """
@@ -145,7 +139,6 @@ def get_profile_summary(user_id: str) -> Optional[dict]:
     p = stored_data["profile"]
     m = stored_data["metadata"]
 
-    # Calculate what is missing to help the Profile Agent
     missing_fields = []
     if p["basic_salary"] == 0:
         missing_fields.append("basic_salary")
@@ -168,9 +161,6 @@ def get_profile_summary(user_id: str) -> Optional[dict]:
     }
 
 
-# ─────────────────────────────────────────────
-# PROFILE AGENT HELPER
-# ─────────────────────────────────────────────
 
 def extract_and_update_from_conversation(user_id: str,
                                           conversation_text: str,
@@ -189,9 +179,6 @@ def extract_and_update_from_conversation(user_id: str,
     return update_profile(user_id, extracted_data)
 
 
-# ─────────────────────────────────────────────
-# PRIVATE HELPERS
-# ─────────────────────────────────────────────
 
 def _get_profile_path(user_id: str) -> str:
     return os.path.join(PROFILES_DIR, f"{user_id}.json")
@@ -205,9 +192,6 @@ def _load_raw(user_id: str) -> Optional[dict]:
         return json.load(f)
 
 
-# ─────────────────────────────────────────────
-# PRETTY PRINT HELPERS
-# ─────────────────────────────────────────────
 
 def print_profile_list(profiles: list[dict], user_id: str):
     print(f"\n{'='*55}")

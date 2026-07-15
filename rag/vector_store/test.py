@@ -2,7 +2,6 @@ from rag.vector_store import ChromaVectorStore
 from rag.embeddings import SentenceTransformerEmbedding
 from rag.retrieval import HybridRetriever
 
-# db = ChromaVectorStore()
 db = ChromaVectorStore(embedding_model=SentenceTransformerEmbedding())
 
 

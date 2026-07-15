@@ -46,10 +46,8 @@ class RagPipeline:
         """
         candidate_count = max(self.rerank_k, k)
 
-        # Retrieve initial candidate pool using the base retriever
         candidates = self.base_retriever.retrieve(query, k=candidate_count)
 
-        # Rerank and return the top k
         return self.reranker.rerank(query, candidates, k=k)
 
 
@@ -59,7 +57,6 @@ def query_index(path: str, collection_name: str, query: str, k: int = 3) -> List
     from rag.vector_store.chroma import ChromaVectorStore
     from rag.embeddings.sentence_transformer import SentenceTransformerEmbedding
     
-    # Resolve path to rag/chroma_db if needed
     if path == "chroma_db" and not os.path.exists("chroma_db") and os.path.exists("rag/chroma_db"):
         path = "rag/chroma_db"
         
