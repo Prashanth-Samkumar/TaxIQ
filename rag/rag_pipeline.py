@@ -50,16 +50,3 @@ class RagPipeline:
 
         return self.reranker.rerank(query, candidates, k=k)
 
-
-def query_index(path: str, collection_name: str, query: str, k: int = 3) -> List[Dict[str, Any]]:
-    """Helper wrapper function to query the index, matching legacy tool interface."""
-    import os
-    from rag.vector_store.chroma import ChromaVectorStore
-    from rag.embeddings.sentence_transformer import SentenceTransformerEmbedding
-    
-    if path == "chroma_db" and not os.path.exists("chroma_db") and os.path.exists("rag/chroma_db"):
-        path = "rag/chroma_db"
-        
-    embedder = SentenceTransformerEmbedding()
-    db = ChromaVectorStore(path=path, collection_name=collection_name, embedding_model=embedder)
-    return db.similarity_search(query, k=k)
