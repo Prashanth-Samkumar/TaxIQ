@@ -18,7 +18,7 @@ from tools.profile_store import (
     list_profiles,
     get_profile_summary,
 )
-from rag.rag_pipeline import query_index
+from rag import RagPipeline
 from tools.deduction_checker import check_deductions, calculate_hra_exemption
 from tools.itr1_calculator import calculate_tax
 
@@ -145,7 +145,8 @@ def rag_query_tool(query:str, runtime: ToolRuntime[UserContext]) -> str:
     Query the RAG index for relevant information.
     Returns the retrieved chunks as a JSON string.
     """
-    results = query_index("chroma_db", "tax_iq_collection", query, k=3)
+
+    results = rag_pipeline.retrieve(query, k=3)
     return json.dumps(results, default=str)
 
 prompt_path = os.path.join(os.path.dirname(__file__), "..", "prompts", "tax_agent_system_prompt.txt")
@@ -153,7 +154,7 @@ with open(prompt_path, "r", encoding="utf-8") as f:
     prompt = f.read()
 
 model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
-
+rag_pipeline = RagPipeline()
 tools = [
     create_profile_tool,
     update_profile_tool,
