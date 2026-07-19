@@ -1,10 +1,17 @@
 import sys
-from dotenv import load_dotenv
-load_dotenv(override=True)
-
-from agents.agent import agent
+from agents import load_agent
 from tools.schemas import UserContext
-from rag import RagPipeline
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+REQUIRED_KEYS = ["GROQ_API_KEY", "GOOGLE_API_KEY"]
+
+def validate_env() -> None:
+    missing = [k for k in REQUIRED_KEYS if not os.environ.get(k)]
+    if missing:
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
 
 
 def main():
@@ -58,5 +65,5 @@ def main():
             print(f"\nError: {e}\n")
 
 if __name__ == "__main__":
-    rag = RagPipeline()
-    print(rag.retrieve("What is the income tax rate for FY 2025-26?")) 
+    # main()
+    validate_env()

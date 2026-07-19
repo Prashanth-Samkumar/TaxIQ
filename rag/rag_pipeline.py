@@ -1,6 +1,5 @@
 from typing import List, Dict, Any
-from rag.retrieval import BaseRetriever
-from rag.reranker import BaseReranker
+from functools import lru_cache
 from rag.retrieval import HybridRetriever
 from rag.retrieval import BM25Retriever
 from rag.vector_store import ChromaVectorStore
@@ -50,3 +49,7 @@ class RagPipeline:
 
         return self.reranker.rerank(query, candidates, k=k)
 
+@lru_cache
+def get_rag_pipeline() -> RagPipeline:
+    """Returns the shared RagPipeline instance, building it on first call."""
+    return RagPipeline()
