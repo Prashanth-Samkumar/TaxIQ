@@ -38,7 +38,9 @@ venv.bak/
 
 
 
-# Binary and serialized files
+# Databases & Binary files
+*.db
+checkpoints.db
 *.bin
 *.pkl
 *.pickle

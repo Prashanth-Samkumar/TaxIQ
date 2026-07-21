@@ -1,4 +1,4 @@
 
-from rag.rag_pipeline import RagPipeline, get_rag_pipeline
+from rag.rag_pipeline import get_rag_pipeline
 
-__all__ = ["RagPipeline", "get_rag_pipeline"]
+__all__ = ["get_rag_pipeline"]

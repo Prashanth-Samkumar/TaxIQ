@@ -5,7 +5,7 @@ from typing import Optional
 @dataclass
 class UserContext:
     user_id: str
-
+    
 
 @dataclass
 class UserProfile:
