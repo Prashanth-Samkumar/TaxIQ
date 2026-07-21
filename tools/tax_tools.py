@@ -7,7 +7,7 @@ from tools.profile_store import (
     list_profiles,
     get_profile_summary,
 )
-from rag import RagPipeline, get_rag_pipeline
+from rag import get_rag_pipeline
 from tools.deduction_checker import check_deductions, calculate_hra_exemption
 from tools.itr1_calculator import calculate_tax
 from langchain.tools import tool, ToolRuntime

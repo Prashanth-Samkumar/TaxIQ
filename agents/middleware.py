@@ -4,12 +4,12 @@ from langchain.agents.middleware import (
     ToolCallLimitMiddleware,
     ContextEditingMiddleware,
     ClearToolUsesEdit
-)
+)   
 
 def get_middlewares() -> list:
     return [
         ModelFallbackMiddleware(
-            "groq:llama-3.1-8b-instant",       
+            "groq:llama-3.3-70b-versatile",       
             "google_genai:gemini-2.0-flash"
         ),
         SummarizationMiddleware(
