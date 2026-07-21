@@ -1,3 +1,7 @@
+import logging
+import json 
+from dataclasses import asdict
+from langchain.tools import tool, ToolRuntime
 from tools.schemas import UserContext, UserProfile, TaxInput
 from tools.profile_store import (
     create_profile,
@@ -10,84 +14,91 @@ from tools.profile_store import (
 from rag import get_rag_pipeline
 from tools.deduction_checker import check_deductions, calculate_hra_exemption
 from tools.itr1_calculator import calculate_tax
-from langchain.tools import tool, ToolRuntime
-import json 
-from dataclasses import asdict
+
+logger = logging.getLogger(__name__)
 
 @tool
 def create_profile_tool(profile: UserProfile,
                         notes: str = "",
                         *,
                         runtime: ToolRuntime[UserContext]) -> str:
-    """Create a new profile and save to disk. Returns the user_id string."""
-    
+    """
+    Create a new tax profile for a person or relative (e.g., Self, Mom, Dad, Spouse) and save to disk.
+    Returns the created profile_id string.
+    """
     return create_profile(runtime.context.user_id, profile, notes)
 
 @tool
 def update_profile_tool(updates: dict,
+                        profile_name: str = "",
                         *,
                         runtime: ToolRuntime[UserContext]) -> str:
     """
-    Update specific fields in the active profile.
+    Update specific fields in a profile.
     updates is a dict of field_name -> new_value.
-    Only provided fields are updated, rest remain unchanged.
+    profile_name (optional): target relative/person name (e.g. 'Mom', 'Dad', 'Prashanth').
     Returns 'True' if success, or an error message otherwise.
     """
-    
-    res = update_profile(runtime.context.user_id, updates)
+    res = update_profile(runtime.context.user_id, updates, profile_name=profile_name)
     return str(res)
 
 @tool
-def delete_profile_tool(*, runtime: ToolRuntime[UserContext]) -> str:
-    """Delete the active profile permanently. Returns 'True' if success, or an error message."""
-    
-    res = delete_profile(runtime.context.user_id)
+def delete_profile_tool(profile_name: str = "",
+                        *,
+                        runtime: ToolRuntime[UserContext]) -> str:
+    """Delete a profile permanently by person/relative name. Returns 'True' if success, or an error message."""
+    res = delete_profile(runtime.context.user_id, profile_name=profile_name)
     return str(res)
 
 @tool
-def read_profile_tool(*, runtime: ToolRuntime[UserContext]) -> str:
-    """Load the active profile details. Returns the StoredProfile details as a JSON string, or None."""
-    
-    res = read_profile(runtime.context.user_id)
+def read_profile_tool(profile_name: str = "",
+                      *,
+                      runtime: ToolRuntime[UserContext]) -> str:
+    """Load profile details for a person/relative (e.g., 'Mom' or 'Self'). Returns StoredProfile JSON string, or None."""
+    res = read_profile(runtime.context.user_id, profile_name=profile_name)
     if res is None:
         return "None"
     return json.dumps(asdict(res), default=str)
 
 @tool
 def list_profiles_tool(*, runtime: ToolRuntime[UserContext]) -> str:
-    """List all profiles belonging to the current user. Returns a list of summary dicts as a JSON string."""
-    
+    """List all tax profiles created for the current user and their family members/relatives. Returns JSON string list."""
     res = list_profiles(runtime.context.user_id)
     return json.dumps(res, default=str)
 
 @tool
-def get_profile_summary_tool(*, runtime: ToolRuntime[UserContext]) -> str:
-    """Get a quick summary of the active profile. Returns a JSON string, or None."""
-    
-    res = get_profile_summary(runtime.context.user_id)
+def get_profile_summary_tool(profile_name: str = "",
+                            *,
+                            runtime: ToolRuntime[UserContext]) -> str:
+    """Get a quick summary of a profile by person/relative name. Returns a JSON string, or None."""
+    res = get_profile_summary(runtime.context.user_id, profile_name=profile_name)
     return json.dumps(res, default=str)
 
 @tool
-def check_deductions_tool(*, runtime: ToolRuntime[UserContext]) -> str:
+def check_deductions_tool(profile_name: str = "",
+                          *,
+                          runtime: ToolRuntime[UserContext]) -> str:
     """
-    Analyze the active user profile to check deduction eligibility,
+    Analyze tax profile for a person/relative name to check deduction eligibility,
     utilized limits, remaining limits, and potential tax savings.
     Returns the deduction report as a JSON string, or 'None' if no profile exists.
     """
-    profile_data = read_profile(runtime.context.user_id)
+    profile_data = read_profile(runtime.context.user_id, profile_name=profile_name)
     if profile_data is None:
         return "None"
     report = check_deductions(profile_data.profile)
     return json.dumps(asdict(report), default=str)
 
 @tool
-def calculate_tax_tool(*, runtime: ToolRuntime[UserContext]) -> str:
+def calculate_tax_tool(profile_name: str = "",
+                       *,
+                       runtime: ToolRuntime[UserContext]) -> str:
     """
-    Calculate the income tax liability under both Old and New regimes
-    for the active user profile. Compare the results and break down by slab.
-    Returns the tax calculation results as a JSON string, or 'None' if no profile exists.
+    Calculate income tax liability under both Old and New regimes for a person/relative name.
+    Compare results and break down by slab.
+    Returns tax calculation results as a JSON string, or 'None' if no profile exists.
     """
-    profile_data = read_profile(runtime.context.user_id)
+    profile_data = read_profile(runtime.context.user_id, profile_name=profile_name)
     if profile_data is None:
         return "None"
     
@@ -143,4 +154,3 @@ def rag_query_tool(query: str, *, runtime: ToolRuntime[UserContext]) -> str:
         logger.exception("RAG retrieval failed for query=%r", query)
         return json.dumps({"error": "retrieval_failed"})
     return json.dumps(results, default=str)
-    

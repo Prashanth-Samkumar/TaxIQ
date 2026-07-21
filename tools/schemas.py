@@ -62,6 +62,7 @@ class ProfileMetadata:
     last_updated: str
     financial_year: str
     notes: str = ""
+    
 
 
 @dataclass

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaxIQ - Premium Tax Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-receipt accent-icon"></i>
+                    <span>TaxIQ</span>
+                </div>
+            </div>
+            
+            <div class="profiles-section">
+                <div class="section-title">
+                    <span>Tax Profiles</span>
+                    <button id="refresh-profiles-btn" title="Refresh Profiles">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+                <div class="profiles-list" id="profiles-list">
+                    <div class="loading-spinner">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <i class="fa-solid fa-circle-user user-avatar"></i>
+                    <div class="user-details">
+                        <span class="user-name">Default User</span>
+                        <span class="user-status">Personal Workspace</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="active-profile-info">
+                    <i class="fa-solid fa-user-tie active-profile-icon"></i>
+                    <div>
+                        <h2 id="active-profile-name">No Active Profile</h2>
+                        <span id="active-profile-meta">Ask TaxIQ to load or create a profile.</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <span class="connection-badge"><span class="pulse-dot"></span>Online</span>
+                </div>
+            </header>
+
+            <!-- Chat Message Feed -->
+            <div class="chat-feed" id="chat-feed">
+                <!-- Welcome Card -->
+                <div class="welcome-card" id="welcome-card">
+                    <div class="welcome-icon">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <h1>Welcome to TaxIQ</h1>
+                    <p>Your premium personal tax planning consultant. I can help you set up, optimize, and calculate taxes for you and your family members.</p>
+                    
+                    <div class="suggestions-grid">
+                        <button class="suggestion-btn" onclick="sendSuggestion('Create a profile for Prashanth, age 25, in Chennai')">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Create My Profile</span>
+                        </button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Create a profile for my mom, age 58, in Chennai')">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Create Mom's Profile</span>
+                        </button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('List all profiles')">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>List All Profiles</span>
+                        </button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Calculate tax comparison')">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>Calculate Taxes (ITR-1)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <footer class="chat-input-container">
+                <form id="chat-form" class="chat-form">
+                    <input type="text" id="chat-input" placeholder="Ask TaxIQ about your tax profile, deductions, or regime calculations..." autocomplete="off" required>
+                    <button type="submit" id="send-btn" class="send-btn">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </footer>
+        </main>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
