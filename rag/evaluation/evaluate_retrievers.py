@@ -3,6 +3,9 @@ import sys
 import os
 from typing import List, Dict, Any
 
+# Avoid UnicodeEncodeError on Windows terminals (e.g. for Rupee symbol ₹)
+sys.stdout.reconfigure(encoding='utf-8')
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from rag.vector_store.chroma import ChromaVectorStore
@@ -29,6 +32,9 @@ def run_evaluation():
     
     from rag.rag_pipeline import RagPipeline
     reranked_retriever = RagPipeline(rerank_k=15)
+    reranked_rewrite = RagPipeline(rerank_k=15, query_transform_strategy="rewrite")
+    reranked_expand = RagPipeline(rerank_k=15, query_transform_strategy="expand")
+    reranked_hyde = RagPipeline(rerank_k=15, query_transform_strategy="hyde")
     
     evaluation_data = load_evaluation_data()
     num_queries = len(evaluation_data)
@@ -38,28 +44,48 @@ def run_evaluation():
         "bm25": {"hits": 0, "mrr": 0.0},
         "vector": {"hits": 0, "mrr": 0.0},
         "hybrid": {"hits": 0, "mrr": 0.0},
-        "reranked": {"hits": 0, "mrr": 0.0}
+        "reranked": {"hits": 0, "mrr": 0.0},
+        "rewrite": {"hits": 0, "mrr": 0.0},
+        "expand": {"hits": 0, "mrr": 0.0},
+        "hyde": {"hits": 0, "mrr": 0.0}
     }
     
     k = 5
     
     print("\nRunning queries through retrieval engines...")
-    for item in evaluation_data:
+    for idx, item in enumerate(evaluation_data, 1):
         category = item["category"]
         query = item["query"]
         expected = item["expected_chunk_ids"]
+        print(f"[{idx}/{num_queries}] Processing query: {query[:60]}...")
         
         bm25_res = bm25.retrieve(query, k=k)
         vector_res = vector_store.similarity_search(query, k=k)
         hybrid_res = hybrid.retrieve(query, k=k)
         reranked_res = reranked_retriever.retrieve(query, k=k)
+        rewrite_res = reranked_rewrite.retrieve(query, k=k)
+        expand_res = reranked_expand.retrieve(query, k=k)
+        hyde_res = reranked_hyde.retrieve(query, k=k)
         
         bm25_ids = [r["id"] for r in bm25_res]
         vector_ids = [r["id"] for r in vector_res]
         hybrid_ids = [r["id"] for r in hybrid_res]
         reranked_ids = [r["id"] for r in reranked_res]
+        rewrite_ids = [r["id"] for r in rewrite_res]
+        expand_ids = [r["id"] for r in expand_res]
+        hyde_ids = [r["id"] for r in hyde_res]
         
-        for key, retrieved_ids in [("bm25", bm25_ids), ("vector", vector_ids), ("hybrid", hybrid_ids), ("reranked", reranked_ids)]:
+        eval_runs = [
+            ("bm25", bm25_ids),
+            ("vector", vector_ids),
+            ("hybrid", hybrid_ids),
+            ("reranked", reranked_ids),
+            ("rewrite", rewrite_ids),
+            ("expand", expand_ids),
+            ("hyde", hyde_ids)
+        ]
+        
+        for key, retrieved_ids in eval_runs:
             hit = False
             mrr_val = 0.0
             for rank, rid in enumerate(retrieved_ids, start=1):
@@ -71,18 +97,19 @@ def run_evaluation():
                 metrics[key]["hits"] += 1
                 metrics[key]["mrr"] += mrr_val
 
-    print("\n" + "="*45)
+    print("\n" + "="*55)
     print("      RETRIEVAL ENGINE PERFORMANCE SUMMARY      ")
-    print("="*45)
+    print("="*55)
     
-    print(f"{'Engine':<10} | {'Hit Rate (k=5)':<15} | {'Mean Reciprocal Rank (MRR)':<25}")
-    print("-"*60)
+    print(f"{'Engine':<18} | {'Hit Rate (k=5)':<15} | {'Mean Reciprocal Rank (MRR)':<25}")
+    print("-"*65)
     for engine, data in metrics.items():
         hit_rate = (data["hits"] / num_queries) * 100
         mrr = data["mrr"] / num_queries
-        print(f"{engine.upper():<10} | {hit_rate:>13.1f}% | {mrr:>24.4f}")
-    print("="*60)
+        print(f"{engine.upper():<18} | {hit_rate:>13.1f}% | {mrr:>24.4f}")
+    print("="*65)
     print("Evaluation completed successfully.")
 
 if __name__ == "__main__":
     run_evaluation()
+

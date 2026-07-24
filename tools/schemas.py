@@ -40,6 +40,7 @@ class UserProfile:
     are_parents_senior_citizen: bool = False
 
     nps_contribution: float = 0
+    employer_nps_contribution: float = 0
 
     education_loan_interest: float = 0
 
@@ -105,6 +106,7 @@ class TaxInput:
     """
     gross_salary: float
     age: int = 0
+    basic_salary: float = 0
     hra_exemption: float = 0
     standard_deduction: float = 75000
     deduction_80c: float = 0
@@ -112,6 +114,7 @@ class TaxInput:
     deduction_80d_parents: float = 0
     are_parents_senior_citizen: bool = False
     deduction_80ccd1b: float = 0
+    deduction_80ccd2: float = 0
     deduction_80e: float = 0
     deduction_80g: float = 0
     deduction_80tta: float = 0
@@ -149,12 +152,14 @@ class ITR2Input:
     """
     gross_salary: float
     age: int = 0
+    basic_salary: float = 0
     hra_exemption: float = 0
     deduction_80c: float = 0
     deduction_80d_self: float = 0
     deduction_80d_parents: float = 0
     are_parents_senior_citizen: bool = False
     deduction_80ccd1b: float = 0
+    deduction_80ccd2: float = 0
     deduction_80e: float = 0
     deduction_80g: float = 0
     deduction_80tta: float = 0

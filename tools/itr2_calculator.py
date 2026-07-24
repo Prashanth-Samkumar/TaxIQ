@@ -198,12 +198,17 @@ def calculate_itr2_tax(inputs: ITR2Input, regime: str = "both") -> dict:
             else:
                 interest_deduction = min(inputs.deduction_80tta, 10000)
 
+            # Sec 80CCD(2): employer's NPS contribution, capped at 10% of basic
+            # salary under the old regime.
+            utilized_80ccd2 = min(inputs.deduction_80ccd2, 0.10 * inputs.basic_salary)
+
             total_deductions = (
                 std_deduction +
                 inputs.hra_exemption +
                 min(inputs.deduction_80c, 150000) +
                 utilized_80d +
                 min(inputs.deduction_80ccd1b, 50000) +
+                utilized_80ccd2 +
                 inputs.deduction_80e +
                 inputs.deduction_80g +
                 interest_deduction +
@@ -211,7 +216,10 @@ def calculate_itr2_tax(inputs: ITR2Input, regime: str = "both") -> dict:
             )
         else:
             std_deduction = min(inputs.gross_salary, 75000)
-            total_deductions = std_deduction
+            # Sec 80CCD(2) still applies under the new regime, capped at 14% of
+            # basic salary (raised from 10% by Budget 2024).
+            utilized_80ccd2 = min(inputs.deduction_80ccd2, 0.14 * inputs.basic_salary)
+            total_deductions = std_deduction + utilized_80ccd2
 
         normal_gross_total = inputs.gross_salary + inputs.other_income + inputs.cg_stcg_other
         normal_taxable = max(0.0, normal_gross_total - total_deductions)

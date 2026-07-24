@@ -156,6 +156,33 @@ def check_deductions(profile: UserProfile) -> DeductionReport:
         is_missed=profile.nps_contribution == 0
     ))
 
+    utilized_80ccd2 = min(profile.employer_nps_contribution, 0.10 * profile.basic_salary)
+    max_80ccd2 = 0.10 * profile.basic_salary
+    remaining_80ccd2 = max(0, max_80ccd2 - profile.employer_nps_contribution)
+
+    if profile.employer_nps_contribution == 0:
+        missed_opportunities.append(
+            "80CCD(2): Ask your employer to route part of your CTC as an NPS "
+            "contribution (up to 10% of basic under old regime, 14% under new "
+            "regime). This is deductible in BOTH regimes and doesn't reduce "
+            "your take-home."
+        )
+
+    items.append(DeductionItem(
+        section="80CCD(2)",
+        name="Employer's NPS Contribution",
+        max_limit=max_80ccd2,
+        utilized=utilized_80ccd2,
+        remaining=remaining_80ccd2,
+        is_eligible=True,
+        message=(
+            f"Deductible in both Old and New regime. Old regime cap: 10% of basic "
+            f"(Rs. {max_80ccd2:,.0f}). New regime cap: 14% of basic. "
+            f"Used: Rs. {utilized_80ccd2:,.0f}."
+        ),
+        is_missed=profile.employer_nps_contribution == 0
+    ))
+
     if profile.education_loan_interest > 0:
         items.append(DeductionItem(
             section="80E",

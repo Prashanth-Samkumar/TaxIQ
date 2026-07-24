@@ -45,7 +45,8 @@ When updating a profile with `update_profile_tool`, use keys that match the `Use
 - **Salary details**: `gross_salary` (float), `basic_salary` (float), `hra_received` (float), `rent_paid_monthly` (float)
 - **80C investments (total limit 1.5L)**: `epf_contribution`, `ppf_contribution`, `elss_investment`, `life_insurance_premium`, `home_loan_principal`, `nsc_investment`, `tuition_fees`, `sukanya_samriddhi`, `tax_saving_fd`
 - **80D health insurance**: `self_health_insurance`, `parent_health_insurance`, `are_parents_senior_citizen` (bool)
-- **80CCD1B NPS**: `nps_contribution`
+- **80CCD1B NPS (self, additional over 80C)**: `nps_contribution`
+- **80CCD2 NPS (employer's contribution via CTC, deductible in BOTH regimes)**: `employer_nps_contribution`
 - **80E education loan**: `education_loan_interest`
 - **80G donations**: `donations_50_percent`, `donations_100_percent`
 - **80TTA savings interest**: `savings_account_interest`

@@ -159,12 +159,17 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
         else:
             interest_deduction = min(inputs.deduction_80tta, 10000)
 
+        # Sec 80CCD(2): employer's NPS contribution, capped at 10% of basic salary
+        # under the old regime, on top of (not counted within) the 80C limit.
+        utilized_80ccd2_old = min(inputs.deduction_80ccd2, 0.10 * inputs.basic_salary)
+
         total_deductions = (
             std_deduction_old +
             inputs.hra_exemption +
             min(inputs.deduction_80c, 150000) +
             utilized_80d +
             min(inputs.deduction_80ccd1b, 50000) +
+            utilized_80ccd2_old +
             inputs.deduction_80e +
             inputs.deduction_80g +
             interest_deduction +
@@ -201,7 +206,13 @@ def calculate_tax(inputs: TaxInput, regime: str = "both") -> dict:
     if regime in ["new", "both"]:
 
         std_deduction_new = min(inputs.gross_salary, 75000)
-        total_deductions_new = std_deduction_new
+
+        # Sec 80CCD(2): employer's NPS contribution is one of the few deductions
+        # still allowed under the new regime, capped at 14% of basic salary
+        # (raised from 10% for private-sector employees by Budget 2024).
+        utilized_80ccd2_new = min(inputs.deduction_80ccd2, 0.14 * inputs.basic_salary)
+
+        total_deductions_new = std_deduction_new + utilized_80ccd2_new
 
         taxable_income_new = max(0, gross_total_income - total_deductions_new)
         tax_new, breakdown_new = calculate_new_regime_tax(taxable_income_new)
